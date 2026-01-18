@@ -3,7 +3,7 @@
 > Automatic synchronization bridge between BMad Method agents and Gitea
 
 **Version:** 0.1.0  
-**Authors:** Khaled Z. (khzd19) & Claude (Anthropic)  
+**Authors:** Khaled Z. (khzd) & Claude (Anthropic)  
 **License:** MIT  
 **Date:** January 17, 2026
 
@@ -120,7 +120,7 @@ MailPlus Server
 ```bash
 # Clone repository
 cd /volume1/tools
-git clone https://github.com/khzd19/bmad-gitea-bridge.git
+git clone https://github.com/khzd/bmad-gitea-bridge.git
 cd bmad-gitea-bridge
 
 # Install dependencies
@@ -209,7 +209,7 @@ MIT License - See [LICENSE](LICENSE) file
 ## 🙏 Credits
 
 **Authors:**
-- **Khaled Z.** (khzd19) - Architecture, Infrastructure, Integration
+- **Khaled Z.** (khzd) - Architecture, Infrastructure, Integration
 - **Claude** (Anthropic) - Development, Documentation, Collaboration
 
 **Built with:**
