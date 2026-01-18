@@ -159,7 +159,24 @@ class GiteaClient:
             if '404' in str(e):
                 return None
             raise
-    
+    def user_exists(self, username: str) -> bool:
+        """
+        Check if a user exists
+        
+        Args:
+            username: Username to check
+        
+        Returns:
+            True if user exists, False otherwise
+        """
+        try:
+            user = self.get_user(username)
+            return user is not None
+        except Exception:
+            return False
+
+
+
     def create_user(
         self,
         username: str,
@@ -231,7 +248,49 @@ class GiteaClient:
             data['assignee'] = assignee
         
         return self._make_request('POST', repo_path, data=data)
-    
+
+    def list_issues(self, state: str = 'open') -> List[Dict]:
+        """
+        List issues in repository
+        
+        Args:
+            state: Issue state ('open', 'closed', 'all')
+        
+        Returns:
+            List of issues
+        """
+        try:
+            # Build repo path
+            if self.organization:
+                repo_path = f"{self.organization}/{self.repository}"
+            else:
+                # Get current user for personal repos
+                current_user = self.get_current_user()
+                repo_path = f"{current_user['login']}/{self.repository}"
+            
+            # List issues
+            endpoint = f"/repos/{repo_path}/issues"
+            params = {'state': state}
+            
+            issues = self._make_request('GET', endpoint, params=params)
+            
+            return issues if issues else []
+            
+        except Exception as e:
+            logger.error(f"Failed to list issues: {e}")
+            return []
+
+
+
+
+
+
+
+
+
+
+
+
     def get_current_user(self) -> Dict:
         """
         Get current authenticated user

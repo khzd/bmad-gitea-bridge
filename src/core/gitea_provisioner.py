@@ -1,257 +1,269 @@
 """
-Gitea Provisioner Module
-
-Automatically provisions Gitea users for BMad agents.
-
+Gitea Provisioner
 Authors: Khaled Z. & Claude (Anthropic)
 """
 
-import secrets
-import string
-from typing import Dict, List, Optional
 import logging
-from .agent_discovery import Agent
+from typing import Dict, List
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 
 class GiteaProvisioner:
-    """Provisions Gitea users for BMad agents"""
+    """
+    Provisions BMad agents in Gitea
     
-    def __init__(self, gitea_client, mode: str = "manual"):
+    Modes:
+    - manual: Create issues for manual user creation
+    - auto: Automatically create users
+    """
+    
+    def __init__(self, gitea_client, mode: str = 'manual'):
         """
         Initialize provisioner
         
         Args:
             gitea_client: GiteaClient instance
-            mode: 'auto' or 'manual'
-                - auto: Automatically create Gitea users
-                - manual: Create provisioning issues for approval
+            mode: 'manual' or 'auto'
         """
-        self.client = gitea_client
+        self.gitea_client = gitea_client
         self.mode = mode
         
-        if mode not in ['auto', 'manual']:
+        if mode not in ['manual', 'auto']:
             raise ValueError(f"Invalid mode: {mode}. Must be 'auto' or 'manual'")
+        
+        logger.info(f"Initialized Gitea provisioner in '{mode}' mode")
     
-    def _generate_password(self, length: int = 24) -> str:
+    def _issue_exists_for_agent(self, username: str) -> bool:
         """
-        Generate a secure random password
+        Check if a provisioning issue already exists for this agent
         
         Args:
-            length: Password length
-            
-        Returns:
-            Secure random password
-        """
-        alphabet = string.ascii_letters + string.digits + string.punctuation
-        password = ''.join(secrets.choice(alphabet) for _ in range(length))
-        return password
-    
-    def _user_exists(self, username: str) -> bool:
-        """
-        Check if a user exists in Gitea
+            username: Gitea username (e.g., 'bmad-pm')
         
-        Args:
-            username: Username to check
-            
         Returns:
-            True if user exists, False otherwise
+            True if issue exists, False otherwise
         """
         try:
-            user = self.client.get_user(username)
-            return user is not None
-        except Exception as e:
-            logger.debug(f"User {username} does not exist: {e}")
+            # Get all open issues in the repository
+            issues = self.gitea_client.list_issues(state='open')
+            
+            # Check if any issue title contains this agent
+            for issue in issues:
+                title = issue.get('title', '')
+                # Check if username is in the title
+                if username in title or username.replace('bmad-', '') in title:
+                    logger.info(f"📋 Issue already exists for {username}: #{issue['number']}")
+                    return True
+            
             return False
-    
-    def _create_gitea_user(self, agent: Agent, password: str) -> Dict:
-        """
-        Create a user in Gitea
-        
-        Args:
-            agent: Agent object
-            password: Password for the user
             
-        Returns:
-            User creation result
-        """
-        username = f"bmad-{agent.name}"
-        
-        try:
-            user = self.client.create_user(
-                username=username,
-                email=agent.email,
-                password=password,
-                full_name=agent.display_name,
-                send_notify=False
-            )
-            
-            logger.info(f"✅ Created Gitea user: {username}")
-            
-            return {
-                'status': 'created',
-                'username': username,
-                'email': agent.email,
-                'password': password,
-                'user_id': user.get('id')
-            }
-        
         except Exception as e:
-            logger.error(f"Failed to create user {username}: {e}")
-            raise
+            logger.warning(f"Could not check existing issues: {e}")
+            return False  # En cas d'erreur, on assume qu'il n'existe pas
     
-    def _create_provisioning_issue(self, agent: Agent) -> Dict:
+    def _create_provisioning_issue(self, agent, username: str) -> Dict:
         """
-        Create a provisioning issue in Gitea
+        Create a Gitea issue for manual user provisioning
         
         Args:
             agent: Agent object
-            
+            username: Suggested Gitea username
+        
         Returns:
-            Issue creation result
+            Created issue data
         """
-        username = f"bmad-{agent.name}"
+        # Get current user for assignment
+        current_user = self.gitea_client.get_current_user()
         
-        issue_title = f"🤖 Provision Gitea user for agent: {agent.display_name}"
-        
-        issue_body = f"""
-## New BMad Agent Detected
+        # Issue title
+        title = f"🤖 Provision user: {username}"
+        # Issue body with instructions
+        body = f"""## Agent Information
 
-**Agent**: `{agent.name}`  
-**Display Name**: {agent.display_name}  
-**Title**: {agent.title}  
-**Module**: {agent.module}  
-**Icon**: {agent.icon}
-
-## Action Required
-
-A new BMad agent has been detected and needs a Gitea user account.
-
-### Proposed User Details
-
-- **Username**: `{username}`
-- **Email**: `{agent.email}`
-- **Full Name**: `{agent.display_name}`
-- **Password**: [Auto-generate secure password]
-
-### Manual Creation Steps
-```bash
-# Via Gitea API
-curl -X POST "{self.client.base_url}/api/v1/admin/users" \\
-  -H "Authorization: token YOUR_ADMIN_TOKEN" \\
-  -H "Content-Type: application/json" \\
-  -d '{{
-    "username": "{username}",
-    "email": "{agent.email}",
-    "password": "GENERATE_SECURE_PASSWORD",
-    "full_name": "{agent.display_name}",
-    "send_notify": false
-  }}'
-```
-
-Or via Gitea Web UI:
-1. Go to Site Administration → User Accounts
-2. Click "Create User Account"
-3. Fill in the details above
-4. Click "Create User Account"
-
-### After Creation
-
-Once the user is created, close this issue and the agent will be fully provisioned.
+**Agent Name:** `{agent.name}`  
+**Display Name:** {agent.display_name}  
+**Icon:** {agent.icon}  
+**Module:** {agent.module}  
 
 ---
 
-*This issue was automatically created by BMad-Gitea-Bridge*
+## Suggested Gitea User
+
+**Username:** `{username}`  
+**Email:** `{agent.email}`  
+**Full Name:** `{agent.display_name}`  
+
+---
+
+## Manual Provisioning Steps
+
+1. **Go to Gitea Site Administration**
+   - Settings → Users → Create User
+
+2. **Fill user details:**
+```
+   Username: {username}
+   Email: {agent.email}
+   Full Name: {agent.display_name}
+   Password: [generate secure password]
+```
+
+3. **Save and activate user**
+
+4. **Close this issue** when done
+
+---
+
+**Created by:** BMad-Gitea-Bridge  
+**Mode:** Manual provisioning
 """
         
-        try:
-            issue = self.client.create_issue(
-                title=issue_title,
-                body=issue_body,
-                labels=['provisioning', 'infrastructure', 'admin-required']
-            )
-            
-            logger.info(f"📋 Created provisioning issue #{issue.get('number')} for {username}")
-            
-            return {
-                'status': 'pending',
-                'username': username,
-                'email': agent.email,
-                'issue_number': issue.get('number'),
-                'issue_url': issue.get('html_url')
-            }
+        # Create issue
+        issue = self.gitea_client.create_issue(
+            title=title,
+            body=body,
+            assignee=current_user.get('login')
+        )
         
-        except Exception as e:
-            logger.error(f"Failed to create provisioning issue for {username}: {e}")
-            raise
+        logger.info(f"📋 Created provisioning issue #{issue['number']} for {username}")
+        
+        return issue
     
-    def provision_agent(self, agent: Agent) -> Dict:
+    def _create_user_auto(self, agent, username: str) -> Dict:
         """
-        Provision a single agent
+        Automatically create Gitea user
         
         Args:
-            agent: Agent to provision
-            
+            agent: Agent object
+            username: Gitea username
+        
         Returns:
-            Provisioning result dict with status
+            Created user data
         """
+        import secrets
+        
+        # Generate secure password
+        password = secrets.token_urlsafe(16)
+        
+        user_data = {
+            'username': username,
+            'email': agent.email,
+            'full_name': agent.display_name,
+            'password': password,
+            'must_change_password': True,
+            'send_notify': True
+        }
+        
+        user = self.gitea_client.create_user(user_data)
+        
+        logger.info(f"✅ Created user {username} automatically")
+        
+        return user
+    
+    def provision_agent(self, agent) -> Dict:
+        """
+        Provision a single agent in Gitea
+        
+        Args:
+            agent: Agent object with name, email, etc.
+        
+        Returns:
+            Dict with provisioning status
+        """
+        # Generate Gitea username (e.g., 'bmad-pm')
         username = f"bmad-{agent.name}"
         
-        # Check if user already exists
-        if self._user_exists(username):
-            logger.info(f"User {username} already exists, skipping")
+        logger.info(f"Provisioning agent: {agent.name} → {username}")
+        
+        # Check if user exists
+        user_exists = self.gitea_client.user_exists(username)
+        
+        if user_exists:
+            logger.info(f"✅ User {username} already exists")
             return {
                 'status': 'exists',
                 'username': username,
                 'email': agent.email
             }
         
-        # Auto mode: create user directly
-        if self.mode == 'auto':
-            password = self._generate_password()
-            return self._create_gitea_user(agent, password)
+        # User doesn't exist - check if issue already exists (manual mode)
+        if self.mode == 'manual':
+            # Check if issue already created
+            if self._issue_exists_for_agent(username):
+                logger.info(f"⏭️  Issue already exists for {username}, skipping")
+                return {
+                    'status': 'pending',
+                    'username': username,
+                    'email': agent.email,
+                    'issue_exists': True
+                }
+            
+            # Create provisioning issue
+            issue = self._create_provisioning_issue(agent, username)
+            
+            return {
+                'status': 'pending',
+                'username': username,
+                'email': agent.email,
+                'issue_number': issue['number']
+            }
         
-        # Manual mode: create provisioning issue
-        else:
-            return self._create_provisioning_issue(agent)
+        # Auto mode - create user directly
+        elif self.mode == 'auto':
+            user = self._create_user_auto(agent, username)
+            
+            return {
+                'status': 'created',
+                'username': username,
+                'email': agent.email,
+                'user_id': user.get('id')
+            }
     
-    def provision_all_agents(self, agents: List[Agent]) -> Dict[str, List[Dict]]:
+    def provision_all_agents(self, agents: List) -> Dict:
         """
         Provision all agents
         
         Args:
-            agents: List of agents to provision
-            
+            agents: List of Agent objects
+        
         Returns:
-            Dict with lists of results by status:
-            {
-                'created': [...],
-                'exists': [...],
-                'pending': [...]
-            }
+            Dict with results summary
         """
         results = {
             'created': [],
             'exists': [],
-            'pending': []
+            'pending': [],
+            'failed': []
         }
         
         for agent in agents:
             try:
                 result = self.provision_agent(agent)
+                
                 status = result['status']
-                results[status].append(result)
-            
+                
+                if status == 'created':
+                    results['created'].append(result)
+                elif status == 'exists':
+                    results['exists'].append(result)
+                elif status == 'pending':
+                    results['pending'].append(result)
+                
             except Exception as e:
                 logger.error(f"Failed to provision agent {agent.name}: {e}")
-                # Continue with other agents
-                continue
+                results['failed'].append({
+                    'agent': agent.name,
+                    'error': str(e)
+                })
         
         # Log summary
-        logger.info(f"Provisioning complete: "
-                   f"{len(results['created'])} created, "
-                   f"{len(results['exists'])} existing, "
-                   f"{len(results['pending'])} pending")
+        logger.info(
+            f"Provisioning complete: "
+            f"{len(results['created'])} created, "
+            f"{len(results['exists'])} existing, "
+            f"{len(results['pending'])} pending"
+        )
         
         return results
