@@ -23,10 +23,15 @@ class Agent:
 
 
 class AgentDiscovery:
-    def __init__(self, bmad_root: str):
-        self.bmad_root = Path(bmad_root)
-        self.manifest_path = self.bmad_root / "_bmad/_config/agent-manifest.csv"
+    def __init__(self, bmad_root: str, manifest_path: str = None):
+       self.bmad_root = Path(bmad_root)
     
+       # Si manifest fourni, l'utiliser, sinon chemin par défaut
+       if manifest_path:
+           self.manifest_path = Path(manifest_path)
+       else:
+           self.manifest_path = self.bmad_root / "_bmad/_config/agent-manifest.csv"   
+ 
     def discover_all_agents(self):
         agents = []
         with open(self.manifest_path, 'r') as f:

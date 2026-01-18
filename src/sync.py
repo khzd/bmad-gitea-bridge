@@ -64,7 +64,10 @@ def sync(project: str, dry_run: bool):
     console.print("[bold]📋 Phase 1: Agent Discovery[/bold]")
     
     try:
-        discovery = AgentDiscovery(str(project_config.bmad_root))
+        discovery = AgentDiscovery(
+            str(project_config.bmad_root),
+            str(project_config.bmad_manifest)
+            )
         agents = discovery.discover_all_agents()
         
         console.print(f"   [green]✅ Discovered {len(agents)} agents[/green]")
@@ -208,7 +211,10 @@ if __name__ == '__main__':
     console.print("[bold]📋 Phase 1: Agent Discovery[/bold]")
 
     try:
-        discovery = AgentDiscovery(str(project_config.bmad_root))
+        discovery = AgentDiscovery(
+            str(project_config.bmad_root),
+            str(project_config.bmad_manifest)
+            )        
         agents = discovery.discover_all_agents()
 
         console.print(f"   [green]✅ Discovered {len(agents)} agents[/green]")

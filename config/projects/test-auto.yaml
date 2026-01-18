@@ -1,10 +1,10 @@
 project:
-  name: medical
-  description: "Projet médical Bmad"
+  name: test-auto
+  description: "Test automatic user creation"
 
 bmad:
   root: /volume1/concept/bmad
-  manifest: _bmad/_config/agent-manifest.csv
+  manifest: /tmp/test-auto-manifest.csv
 
 gitea:
   url: http://192.168.0.76:3000
@@ -13,7 +13,7 @@ gitea:
   admin_token: ${GITEA_ADMIN_TOKEN}
 
 gmail:
-  base: bmad
+  base: bmad-test
   domain: bmad.local
   enabled: true
 
@@ -22,6 +22,3 @@ sync:
 
 logging:
   level: INFO
-
-
-

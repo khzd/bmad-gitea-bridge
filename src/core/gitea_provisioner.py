@@ -147,17 +147,16 @@ class GiteaProvisioner:
         # Generate secure password
         password = secrets.token_urlsafe(16)
         
-        user_data = {
-            'username': username,
-            'email': agent.email,
-            'full_name': agent.display_name,
-            'password': password,
-            'must_change_password': True,
-            'send_notify': True
-        }
-        
-        user = self.gitea_client.create_user(user_data)
-        
+        user = self.gitea_client.create_user(
+            username = username,
+            email = agent.email,
+            full_name = agent.display_name,
+            password  = password,
+            must_change_password = False,
+            send_notify = True
+        )
+     
+     
         logger.info(f"✅ Created user {username} automatically")
         
         return user

@@ -183,7 +183,8 @@ class GiteaClient:
         email: str,
         password: str,
         full_name: str = "",
-        send_notify: bool = False
+        send_notify: bool = True,
+        must_change_password: bool = False  # ← AJOUTER
     ) -> Dict:
         """
         Create a new user (requires admin token)

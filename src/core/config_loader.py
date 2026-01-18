@@ -33,7 +33,20 @@ class ProjectConfig:
         """Validate after init"""
         if isinstance(self.bmad_root, str):
             self.bmad_root = Path(self.bmad_root)
-        
+
+        if isinstance(self.bmad_manifest, str):
+           manifest_path = Path(self.bmad_manifest)
+           # Si chemin absolu, utiliser tel quel
+        if manifest_path.is_absolute():
+           self.bmad_manifest = manifest_path
+        else:
+           # Si relatif, ajouter à bmad_root
+           self.bmad_manifest = self.bmad_root / self.bmad_manifest
+
+            # DEBUG
+        print(f"DEBUG: Final manifest path: {self.bmad_manifest}")
+
+
         if isinstance(self.bmad_manifest, str):
             self.bmad_manifest = self.bmad_root / self.bmad_manifest
         
@@ -98,6 +111,18 @@ class ConfigLoader:
             log_level=config.get('logging', {}).get('level', 'INFO'),
             sync_provisioning=config.get('sync', {}).get('provisioning', 'issue')  # ← AJOUTER   
             )
+
+# Convert and validate manifest path
+        from pathlib import Path
+        manifest_path = Path(config['bmad']['manifest'])
+        if manifest_path.is_absolute():
+            project_config.bmad_manifest = manifest_path
+        else:
+            project_config.bmad_manifest = Path(config['bmad']['root']) / manifest_path
         
+        # Validate existence
+        if not project_config.bmad_manifest.exists():
+            raise ValueError(f"Manifest not found: {project_config.bmad_manifest}")
+
         logger.info(f"✅ Loaded project: {project_name}")
         return project_config
