@@ -1,0 +1,89 @@
+# Example Project Configuration - Medical Project
+# Copy this to config/projects/medical.yaml and customize
+
+project:
+  name: medical
+  description: "Medical AI project with BMad agents"
+  maintainer: khaled@example.com
+
+bmad:
+  # Path to your BMad project
+  root: /volume1/concept/bmad
+  
+  # Agent manifest location
+  manifest: _bmad/_config/agent-manifest.csv
+  
+  # Directories to watch for changes
+  watch:
+    - _bmad-output/implementation-artifacts/
+    - docs/
+  
+  # Ignore patterns
+  ignore:
+    - "*.pyc"
+    - "__pycache__"
+    - ".git"
+
+gitea:
+  # Your Gitea instance URL
+  url: http://192.168.1.100:3000
+  
+  # Organization (leave empty for personal repos)
+  organization: ProjetMedical
+  
+  # Repository name
+  repository: projet-medical-main
+  
+  # Admin token (use environment variable)
+  admin_token: ${GITEA_TOKEN}
+  
+  # Labels to create
+  labels:
+    - name: epic
+      color: "5319e7"
+      description: "Epic from BMad"
+    - name: story
+      color: "0e8a16"
+      description: "User story"
+    - name: architecture
+      color: "1d76db"
+      description: "Architecture decision"
+    - name: test
+      color: "d93f0b"
+      description: "Testing task"
+    - name: provisioning
+      color: "fbca04"
+      description: "Agent provisioning"
+
+gmail:
+  # Gmail username (before @gmail.com)
+  base: khzdbmad
+  
+  # Domain
+  domain: gmail.com
+  
+  # App password
+  app_password: ${GMAIL_APP_PASSWORD}
+  
+  # Enable notifications
+  enabled: true
+
+sync:
+  # Sync mode: manual or auto
+  mode: manual
+  
+  # Provisioning: issue (manual approval) or auto
+  provisioning: issue
+  
+  # Interval for daemon mode (seconds)
+  interval: 300
+
+logging:
+  # Log level
+  level: INFO
+  
+  # Log file
+  file: logs/medical-sync.log
+  
+  # Console output
+  console: true

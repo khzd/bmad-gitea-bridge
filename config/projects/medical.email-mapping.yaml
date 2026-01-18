@@ -1,0 +1,16 @@
+agent_emails:
+  agent-builder: bmad-agent-builder@bmad.local
+  analyst: bmad-analyst@bmad.local
+  architect: bmad-architect@bmad.local
+  bmad-master: bmad-bmad-master@bmad.local
+  dev: bmad-dev@bmad.local
+  module-builder: bmad-module-builder@bmad.local
+  pm: bmad-pm@bmad.local
+  quick-flow-solo-dev: bmad-quick-flow-solo-dev@bmad.local
+  sm: bmad-sm@bmad.local
+  tea: bmad-tea@bmad.local
+  tech-writer: bmad-tech-writer@bmad.local
+  ux-designer: bmad-ux-designer@bmad.local
+  workflow-builder: bmad-workflow-builder@bmad.local
+gmail_base: bmad
+gmail_domain: bmad.local

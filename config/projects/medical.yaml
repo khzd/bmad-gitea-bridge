@@ -1,0 +1,28 @@
+project:
+  name: medical
+  description: "Projet médical Bmad"
+
+bmad:
+  root: /volume1/concept/bmad
+  manifest: _bmad/_config/agent-manifest.csv
+
+gitea:
+  url: http://192.168.0.76:3000
+  organization: ""
+  repository: projet-medical-main
+  admin_token: ${GITEA_ADMIN_TOKEN}
+
+gmail:
+  base: bmad
+  domain: bmad.local
+  enabled: true
+
+sync:
+  mode: manual
+  provisioning: manual
+
+logging:
+  level: INFO
+
+
+
