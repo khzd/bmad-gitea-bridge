@@ -9,6 +9,7 @@ from pathlib import Path
 from dataclasses import dataclass
 import logging
 from dotenv import load_dotenv
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class ProjectConfig:
     description: str
     bmad_root: Path
     bmad_manifest: Path
+    bmad_artifacts: Optional[Path] = None
     gitea_url: str
     gitea_organization: str
     gitea_repository: str
@@ -102,6 +104,7 @@ class ConfigLoader:
             description=config['project'].get('description', ''),
             bmad_root=config['bmad']['root'],
             bmad_manifest=config['bmad']['manifest'],
+            bmad_artifacts=config['bmad'].get('artifacts'),
             gitea_url=config['gitea']['url'],
             gitea_organization=config['gitea'].get('organization', ''),
             gitea_repository=config['gitea']['repository'],
