@@ -193,6 +193,195 @@ def sync(project: str, dry_run: bool):
     console.print()
 
 @cli.command()
+@click.option('--project', '-p', required=True, help='Project name')
+@click.option('--dry-run', is_flag=True, help='Simulation mode')
+def sync_artifacts(project: str, dry_run: bool):
+    """Synchronize BMad artifacts (epics, stories) with Gitea"""
+    
+    config_loader = ConfigLoader()
+    
+    try:
+        project_config = config_loader.load_project_config(project)
+    except Exception as e:
+        console.print(f"[red]❌ Error loading config:[/red] {e}")
+        sys.exit(1)
+    
+    logger = setup_logging(project_config.log_level)
+    
+    console.print("\n[bold cyan]🌉 BMad-Gitea-Bridge - Artifact Sync[/bold cyan]")
+    console.print(f"[dim]Version {__version__}[/dim]")
+    console.print("=" * 60)
+    
+    console.print(f"\n[bold]Project:[/bold] {project_config.name}")
+    console.print(f"[bold]BMad Root:[/bold] {project_config.bmad_root}")
+    console.print(f"[bold]Gitea:[/bold] {project_config.gitea_url}")
+    
+    if dry_run:
+        console.print("\n[yellow]🔍 DRY RUN - No changes[/yellow]")
+    
+    console.print()
+    
+    # Import syncers
+    from core.epic_syncer import EpicSyncer
+    from core.story_syncer import StorySyncer
+    from core.agent_discovery import AgentDiscovery
+    from core.email_generator import EmailGenerator
+    from gitea.client import GiteaClient
+    
+    # Check artifacts path
+    artifacts_path = getattr(project_config, 'bmad_artifacts', None)
+    
+    if not artifacts_path:
+        console.print("[red]❌ No artifacts path configured[/red]")
+        console.print("\nAdd to config/projects/{project}.yaml:")
+        console.print("  bmad:")
+        console.print("    artifacts: /path/to/artifacts")
+        sys.exit(1)
+    
+    artifacts_path = Path(artifacts_path)
+    
+    if not artifacts_path.exists():
+        console.print(f"[red]❌ Artifacts path not found: {artifacts_path}[/red]")
+        sys.exit(1)
+    
+    # Phase 1: Agent Discovery (needed for assignee mapping)
+    console.print("[bold]📋 Phase 1: Agent Discovery[/bold]")
+    
+    try:
+        discovery = AgentDiscovery(
+            str(project_config.bmad_root),
+            str(project_config.bmad_manifest)
+        )
+        agents = discovery.discover_all_agents()
+        
+        # Assign emails
+        email_mapping_file = Path(f"config/projects/{project}.email-mapping.yaml")
+        email_gen = EmailGenerator(
+            gmail_base=project_config.gmail_base,
+            gmail_domain=project_config.gmail_domain,
+            config_path=str(email_mapping_file)
+        )
+        agents = email_gen.assign_emails_to_agents(agents, save=not dry_run)
+        
+        console.print(f"   [green]✅ Discovered {len(agents)} agents[/green]")
+        
+    except Exception as e:
+        console.print(f"   [red]❌ Error:[/red] {e}")
+        logger.exception("Agent discovery failed")
+        sys.exit(1)
+    
+    # Phase 2: Connect to Gitea
+    console.print("\n[bold]🔗 Phase 2: Gitea Connection[/bold]")
+    
+    try:
+        gitea_client = GiteaClient(
+            base_url=project_config.gitea_url,
+            token=project_config.gitea_admin_token,
+            organization=project_config.gitea_organization,
+            repository=project_config.gitea_repository,
+            verify_ssl=False
+        )
+        
+        if not gitea_client.test_connection():
+            console.print("   [red]❌ Cannot connect to Gitea[/red]")
+            sys.exit(1)
+        
+    except Exception as e:
+        console.print(f"   [red]❌ Error:[/red] {e}")
+        logger.exception("Gitea connection failed")
+        sys.exit(1)
+    
+    # Phase 3: Sync Epics → Milestones
+    console.print("\n[bold]🎯 Phase 3: Epic Sync (Epics → Milestones)[/bold]")
+    
+    try:
+        epic_syncer = EpicSyncer(gitea_client, artifacts_path)
+        epic_results = epic_syncer.sync_all_epics(dry_run=dry_run)
+        
+        console.print(f"   [green]✅ Epic sync complete[/green]")
+        console.print(f"      Created: {len(epic_results['created'])}")
+        console.print(f"      Already exist: {len(epic_results['exists'])}")
+        console.print(f"      Failed: {len(epic_results['failed'])}")
+        
+        if epic_results['created'] or epic_results['failed']:
+            epic_table = Table(title="Epic Sync Results")
+            epic_table.add_column("Epic", style="cyan")
+            epic_table.add_column("Status", style="yellow")
+            epic_table.add_column("Milestone", style="green")
+            
+            for item in epic_results['created']:
+                epic_table.add_row(
+                    Path(item['epic_file']).name,
+                    "✅ Created",
+                    f"#{item['milestone'].get('id', 'N/A')}"
+                )
+            
+            for item in epic_results['failed']:
+                epic_table.add_row(
+                    Path(item['epic_file']).name,
+                    "❌ Failed",
+                    item.get('error', 'Unknown error')
+                )
+            
+            console.print(epic_table)
+    
+    except Exception as e:
+        console.print(f"   [red]❌ Error:[/red] {e}")
+        logger.exception("Epic sync failed")
+    
+    # Phase 4: Sync Stories → Issues
+    console.print("\n[bold]📝 Phase 4: Story Sync (Stories → Issues)[/bold]")
+    
+    try:
+        story_syncer = StorySyncer(gitea_client, artifacts_path, agents)
+        story_results = story_syncer.sync_all_stories(dry_run=dry_run)
+        
+        console.print(f"   [green]✅ Story sync complete[/green]")
+        console.print(f"      Created: {len(story_results['created'])}")
+        console.print(f"      Already exist: {len(story_results['exists'])}")
+        console.print(f"      Failed: {len(story_results['failed'])}")
+        
+        if story_results['created'] or story_results['failed']:
+            story_table = Table(title="Story Sync Results")
+            story_table.add_column("Story", style="cyan")
+            story_table.add_column("Status", style="yellow")
+            story_table.add_column("Assignee", style="magenta")
+            story_table.add_column("Issue", style="green")
+            
+            for item in story_results['created']:
+                story_table.add_row(
+                    Path(item['story_file']).name,
+                    "✅ Created",
+                    item.get('assignee', 'None'),
+                    f"#{item['issue'].get('number', 'N/A')}"
+                )
+            
+            for item in story_results['failed']:
+                story_table.add_row(
+                    Path(item['story_file']).name,
+                    "❌ Failed",
+                    "N/A",
+                    item.get('error', 'Unknown error')
+                )
+            
+            console.print(story_table)
+    
+    except Exception as e:
+        console.print(f"   [red]❌ Error:[/red] {e}")
+        logger.exception("Story sync failed")
+    
+    # Summary
+    console.print("\n" + "=" * 60)
+    
+    if dry_run:
+        console.print("[bold green]✅ Dry-run completed![/bold green]")
+        console.print("\nNo changes were made. Remove --dry-run to execute.")
+    else:
+        console.print("[bold green]✅ Artifact sync completed![/bold green]")
+    
+    console.print()
+
+@cli.command()
 def version():
     """Show version"""
     console.print(f"\n[bold cyan]BMad-Gitea-Bridge[/bold cyan]")
