@@ -42,6 +42,74 @@ MailPlus Server
 
 ---
 
+## 🆕 Recent Updates
+
+### v0.2.0 - Artifact Sync (2026-01-19)
+
+**New Features:**
+- ✨ **Epic Sync**: Automatically sync BMad epics to Gitea milestones
+- ✨ **Story Sync**: Automatically sync BMad stories to Gitea issues with agent assignment
+- ✨ **New Command**: `sync-artifacts` for artifact synchronization
+- ✨ **Task Parsing**: Automatically parse acceptance criteria and tasks as checklists
+
+**New Files:**
+- `src/core/epic_syncer.py` - Epic → Milestone synchronization
+- `src/core/story_syncer.py` - Story → Issue synchronization  
+- `test-artifacts/` - Sample epic and stories for testing
+
+**Usage:**
+```bash
+# Sync artifacts (dry-run)
+python3.14 src/sync.py sync-artifacts --project medical --dry-run
+
+# Sync artifacts (real)
+python3.14 src/sync.py sync-artifacts --project medical
+```
+
+**What it does:**
+1. Discovers epics and stories from BMad artifacts directory
+2. Creates Gitea milestones for epics
+3. Creates Gitea issues for stories
+4. Assigns issues to appropriate BMad agents
+5. Parses acceptance criteria and tasks as checklists
+
+**Configuration:**
+Add `artifacts` path to your project config:
+```yaml
+bmad:
+  root: /volume1/concept/bmad
+  manifest: _bmad/_config/agent-manifest.csv
+  artifacts: /volume1/tools/bmad-gitea-bridge/test-artifacts
+```
+
+**Tested on:**
+- ✅ Synology DSM 7.2
+- ✅ Python 3.14
+- ✅ Gitea 1.21.5
+
+**Contributors:** Khaled Z. & Claude (Anthropic)
+
+---
+
+## ✨ Features
+
+### 🔍 **Phase 1: Agent Discovery**
+...
+```
+
+---
+
+## ✅ **Résultat final :**
+```
+...intro...
+
+## 🆕 Recent Updates        ← NOUVEAU
+(toute la section)
+
+## ✨ Features              ← Existant
+(Phase 1, 2, 3...)
+
+
 ## ✨ Features
 
 ### 🔍 **Phase 1: Agent Discovery**
