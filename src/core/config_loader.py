@@ -21,7 +21,6 @@ class ProjectConfig:
     description: str
     bmad_root: Path
     bmad_manifest: Path
-    bmad_artifacts: Optional[Path] = None
     gitea_url: str
     gitea_organization: str
     gitea_repository: str
@@ -29,7 +28,8 @@ class ProjectConfig:
     gmail_base: str
     gmail_domain: str
     log_level: str = "INFO"
-    sync_provisioning: str = "issue"  # ← AJOUTER CETTE LIGNE    
+    sync_provisioning: str = "issue"  # ← AJOUTER CETTE LIGNE 
+    bmad_artifacts: Optional[Path] = None   
 
     def __post_init__(self):
         """Validate after init"""
