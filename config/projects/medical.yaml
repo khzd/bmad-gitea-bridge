@@ -3,9 +3,9 @@ project:
   description: "Projet médical Bmad"
 
 bmad:
-  root: /volume1/concept/bmad
+  root: /home/khzd19/Bureau/concept/bmad
   manifest: _bmad/_config/agent-manifest.csv
-  artifacts: /volume1/tools/bmad-gitea-bridge/test-artifacts
+  artifacts: /home/khzd19/Bureau/tools/bmad-gitea-bridge/test-artifacts
   
 gitea:
   url: http://192.168.0.76:3000

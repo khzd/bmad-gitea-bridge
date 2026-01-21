@@ -3,7 +3,7 @@ project:
   description: "Test automatic user creation"
 
 bmad:
-  root: /volume1/concept/bmad
+  root: /home/khzd19/Bureau/concept/bmad
   manifest: /tmp/test-auto-manifest.csv
 
 gitea:

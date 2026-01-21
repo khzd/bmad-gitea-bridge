@@ -51,3 +51,5 @@ Thumbs.db
 # Project specific
 config/projects/*.email-mapping.yaml
 config/projects/test.yaml
+venv-prod/
+venv-prod/
