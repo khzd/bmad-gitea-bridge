@@ -57,3 +57,4 @@ venv-prod/
 # Local configurations (do not commit)
 config/projects/medical.yaml
 config/projects/test-auto.yaml
+.env
