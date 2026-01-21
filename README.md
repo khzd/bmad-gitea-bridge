@@ -216,9 +216,9 @@ python3.14 src/sync.py sync --project medical
 
 ## 📚 Documentation
 
-- **[Installation Guide](docs/INSTALL.md)** - Detailed setup instructions
-- **[Usage Guide](docs/USAGE.md)** - How to use the tool
-- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute
+- **[Installation Guide](INSTALL.md)** - Detailed setup instructions
+- **[Usage Guide](USAGE.md)** - How to use the tool
+- **[Contributing](CONTRIBUTING.md)** - How to contribute
 - **[Changelog](CHANGELOG.md)** - Version history
 
 ---
@@ -264,7 +264,7 @@ LOG_LEVEL=INFO
 
 ## 🤝 Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
