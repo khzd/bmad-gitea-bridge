@@ -6,12 +6,45 @@ Authors: Khaled Z. & Claude (Anthropic)
 import os
 import yaml
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TeamConfig:
+    """Team configuration"""
+    name: str
+    description: str = ""
+    permission: str = "write"
+    includes_all_repositories: bool = True
+    members: str = "all"
+    units: List[str] = field(default_factory=lambda: [
+        "repo.code", "repo.issues", "repo.pulls",
+        "repo.releases", "repo.wiki", "repo.projects"
+    ])
+
+
+@dataclass
+class RepositoryConfig:
+    """Repository configuration"""
+    name: str
+    description: str = ""
+    private: bool = True
+    auto_init: bool = True
+
+
+@dataclass
+class OrganizationConfig:
+    """Organization configuration"""
+    name: str
+    description: str = ""
+    create_if_missing: bool = True
+    teams: List[TeamConfig] = field(default_factory=list)
+    repositories: List[RepositoryConfig] = field(default_factory=list)
 
 
 @dataclass
@@ -29,8 +62,9 @@ class ProjectConfig:
     gmail_domain: str
     log_level: str = "INFO"
     sync_provisioning: str = "issue"
-    bmad_artifacts: Optional[Path] = Non
-
+# with default warninig!!! !!! !!!
+    bmad_artifacts: Optional[Path] = None
+    organization_config: Optional[OrganizationConfig] = None    
 
 
     def __post_init__(self):
@@ -100,6 +134,28 @@ class ConfigLoader:
         # Expand env vars
         config = self._expand_env_vars(raw_config)
         
+        # Parse organization config if present
+        org_config = None
+        if 'organization' in config:
+            org_data = config['organization']
+            teams = []
+            if 'teams' in org_data:
+                for team_data in org_data['teams']:
+                    teams.append(TeamConfig(**team_data))
+
+            repos = []
+            if 'repositories' in org_data:
+                for repo_data in org_data['repositories']:
+                    repos.append(RepositoryConfig(**repo_data))
+
+            org_config = OrganizationConfig(
+                name=org_data['name'],
+                description=org_data.get('description', ''),
+                create_if_missing=org_data.get('create_if_missing', True),
+                teams=teams,
+                repositories=repos
+            )
+
         # Create ProjectConfig object
         project_config = ProjectConfig(
             name=config['project']['name'],
@@ -114,7 +170,8 @@ class ConfigLoader:
             gmail_base=config['gmail']['base'],
             gmail_domain=config['gmail'].get('domain', 'gmail.com'),
             log_level=config.get('logging', {}).get('level', 'INFO'),
-            sync_provisioning=config.get('sync', {}).get('provisioning', 'issue')  # ← AJOUTER   
+            sync_provisioning=config.get('sync', {}).get('provisioning', 'issue'),
+            organization_config=org_config
             )
 
 # Convert and validate manifest path
