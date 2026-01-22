@@ -28,11 +28,13 @@ class ProjectConfig:
     gmail_base: str
     gmail_domain: str
     log_level: str = "INFO"
-    sync_provisioning: str = "issue"  # ← AJOUTER CETTE LIGNE 
-    bmad_artifacts: Optional[Path] = None   
+    sync_provisioning: str = "issue"
+    bmad_artifacts: Optional[Path] = Non
+
+
 
     def __post_init__(self):
-        """Validate after init"""
+       """Validate after init"""
         if isinstance(self.bmad_root, str):
             self.bmad_root = Path(self.bmad_root)
 
