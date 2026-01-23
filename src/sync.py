@@ -180,7 +180,76 @@ def sync(project: str, dry_run: bool):
         
         except Exception as e:
             console.print(f"   [red]❌ Error:[/red] {e}")
-            logger.exception("Gitea provisioning failed")    
+            logger.exception("Gitea provisioning failed")
+
+    # Phase 4: Organization & Team Setup
+    if project_config.organization_config and not dry_run:
+        console.print("\n[bold]🏢 Phase 4: Organization & Team Setup[/bold]")
+
+        try:
+            from gitea.organizations import GiteaOrganizations
+
+            # Ensure Gitea client is initialized
+            if 'gitea_client' not in locals():
+                from gitea.client import GiteaClient
+                gitea_client = GiteaClient(
+                    base_url=project_config.gitea_url,
+                    token=project_config.gitea_admin_token,
+                    organization=project_config.gitea_organization,
+                    repository=project_config.gitea_repository,
+                    verify_ssl=False
+                )
+
+            org_manager = GiteaOrganizations(gitea_client)
+            org_config = project_config.organization_config
+
+            # Ensure organization exists
+            org_data = org_manager.ensure_organization(
+                org_config.name,
+                org_config.description
+            )
+
+            if org_manager.organization_exists(org_config.name):
+                console.print(f"   [green]✅ Organization:[/green] {org_config.name} (exists)")
+            else:
+                console.print(f"   [green]✅ Created organization:[/green] {org_config.name}")
+
+            # Create teams and add members
+            for team_config in org_config.teams:
+                team_data = org_manager.create_team(
+                    org_config.name,
+                    team_config.name,
+                    team_config.description,
+                    team_config.permission,
+                    team_config.includes_all_repositories,
+                    team_config.units
+                )
+
+                console.print(f"   [green]✅ Created team:[/green] {team_config.name}")
+
+                # Add members
+                if team_config.members == "all":
+                    # Add all discovered agents
+                    usernames = [f"bmad-{agent.name}" for agent in agents]
+                    results = org_manager.add_users_to_team(team_data['id'], usernames)
+                    console.print(f"   [green]✅ Added {results['success']} members to {team_config.name}[/green]")
+
+            # Create repositories
+            for repo_config in org_config.repositories:
+                repo_data = org_manager.create_repo_in_org(
+                    org_config.name,
+                    repo_config.name,
+                    repo_config.description,
+                    repo_config.private,
+                    repo_config.auto_init
+                )
+
+                console.print(f"   [green]✅ Created repository:[/green] {repo_config.name}")
+
+        except Exception as e:
+            console.print(f"   [red]❌ Error:[/red] {e}")
+            logger.exception("Organization setup failed")
+
     # Summary
     console.print("\n" + "=" * 60)
     
