@@ -88,23 +88,37 @@ class GiteaIssues:
     ) -> Dict:
         """
         Create a tracking issue for an epic
-        
+
         Args:
             epic_title: Epic title
             epic_description: Epic description
             stories: List of story titles in this epic
-            
+
         Returns:
             Created issue data
         """
         # Build epic body with story checklist
         body = f"{epic_description}\n\n## Stories\n\n"
-        
+
         for story in stories:
             body += f"- [ ] {story}\n"
-        
+
         return self.create_issue(
             title=f"Epic: {epic_title}",
             body=body,
             labels=['epic', 'bmad']
         )
+
+    def close_issue(self, issue_number: int) -> Dict:
+        """
+        Close an issue
+
+        Args:
+            issue_number: Issue number to close
+
+        Returns:
+            Updated issue data
+        """
+        issue = self.client.update_issue(issue_number, state='closed')
+        logger.info(f"Closed issue #{issue_number}")
+        return issue
