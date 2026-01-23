@@ -253,10 +253,10 @@ class GiteaClient:
     def list_issues(self, state: str = 'open') -> List[Dict]:
         """
         List issues in repository
-        
+
         Args:
             state: Issue state ('open', 'closed', 'all')
-        
+
         Returns:
             List of issues
         """
@@ -268,18 +268,61 @@ class GiteaClient:
                 # Get current user for personal repos
                 current_user = self.get_current_user()
                 repo_path = f"{current_user['login']}/{self.repository}"
-            
+
             # List issues
             endpoint = f"/repos/{repo_path}/issues"
             params = {'state': state}
-            
+
             issues = self._make_request('GET', endpoint, params=params)
-            
+
             return issues if issues else []
-            
+
         except Exception as e:
             logger.error(f"Failed to list issues: {e}")
             return []
+
+    def update_issue(
+        self,
+        issue_number: int,
+        state: Optional[str] = None,
+        title: Optional[str] = None,
+        body: Optional[str] = None,
+        assignee: Optional[str] = None
+    ) -> Dict:
+        """
+        Update an issue in the configured repository
+
+        Args:
+            issue_number: Issue number to update
+            state: New state ('open' or 'closed')
+            title: New title
+            body: New body/description
+            assignee: New assignee username
+
+        Returns:
+            Updated issue data
+        """
+        # Build repo path
+        if self.organization:
+            repo_path = f"{self.organization}/{self.repository}"
+        else:
+            user = self.get_current_user()
+            repo_path = f"{user['login']}/{self.repository}"
+
+        endpoint = f"/repos/{repo_path}/issues/{issue_number}"
+
+        # Build update data
+        data = {}
+        if state is not None:
+            data['state'] = state
+        if title is not None:
+            data['title'] = title
+        if body is not None:
+            data['body'] = body
+        if assignee is not None:
+            data['assignee'] = assignee
+
+        return self._make_request('PATCH', endpoint, data=data)
 
 
 

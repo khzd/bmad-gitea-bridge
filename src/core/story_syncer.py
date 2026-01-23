@@ -261,12 +261,14 @@ class StorySyncer:
                 story_body=body,
                 assignee=assignee
             )
-            
+
             # Close issue if status is "Done"
             if status.lower() == 'done':
-                # TODO: Close issue via API
-                logger.info(f"Story {title} is marked as Done (would close issue)")
-            
+                issue_number = issue.get('number')
+                if issue_number:
+                    self.issues.close_issue(issue_number)
+                    logger.info(f"Story {title} is marked as Done - closed issue #{issue_number}")
+
             logger.info(f"✅ Created issue for story: {title}")
             
             return {
