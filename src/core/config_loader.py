@@ -61,39 +61,29 @@ class ProjectConfig:
     gitea_admin_token: str
     gmail_base: str
     gmail_domain: str
-    # Champs AVEC valeur par défaut (optionnels) après
-    bmad_artifacts: Optional[Path] = None
     log_level: str = "INFO"
     sync_provisioning: str = "issue"
-# with default warninig!!! !!! !!!
+    # Warning: fields with default must be at the end
     bmad_artifacts: Optional[Path] = None
-    organization_config: Optional[OrganizationConfig] = None    
-
+    organization_config: Optional[OrganizationConfig] = None
 
     def __post_init__(self):
-       """Validate after init"""
+        """Validate after init"""
         if isinstance(self.bmad_root, str):
             self.bmad_root = Path(self.bmad_root)
 
         if isinstance(self.bmad_manifest, str):
-           manifest_path = Path(self.bmad_manifest)
-           # Si chemin absolu, utiliser tel quel
-        if manifest_path.is_absolute():
-           self.bmad_manifest = manifest_path
-        else:
-           # Si relatif, ajouter à bmad_root
-           self.bmad_manifest = self.bmad_root / self.bmad_manifest
+            manifest_path = Path(self.bmad_manifest)
+            # Si chemin absolu, utiliser tel quel
+            if manifest_path.is_absolute():
+                self.bmad_manifest = manifest_path
+            else:
+                # Si relatif, ajouter à bmad_root
+                self.bmad_manifest = self.bmad_root / self.bmad_manifest
 
-            # DEBUG
-        print(f"DEBUG: Final manifest path: {self.bmad_manifest}")
-
-
-        if isinstance(self.bmad_manifest, str):
-            self.bmad_manifest = self.bmad_root / self.bmad_manifest
-        
         if not self.bmad_root.exists():
             raise ValueError(f"BMad root does not exist: {self.bmad_root}")
-        
+
         if not self.bmad_manifest.exists():
             raise ValueError(f"Agent manifest not found: {self.bmad_manifest}")
 

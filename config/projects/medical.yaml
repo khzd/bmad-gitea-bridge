@@ -9,8 +9,8 @@ bmad:
   
 gitea:
   url: http://192.168.0.76:3000
-  organization: ""
-  repository: projet-medical-main
+  organization: HealthProducts
+  repository: healthcare
   admin_token: ${GITEA_ADMIN_TOKEN}
 
 gmail:
