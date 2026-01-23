@@ -8,7 +8,7 @@ project:
 
 bmad:
   # Path to your BMad project
-  root: /volume1/concept/bmad
+  root: /home/khzd19/Bureau/concept/bmad
   
   # Agent manifest location
   manifest: _bmad/_config/agent-manifest.csv

@@ -50,6 +50,7 @@ class OrganizationConfig:
 @dataclass
 class ProjectConfig:
     """Project configuration"""
+    # Champs SANS valeur par défaut (obligatoires) d'abord
     name: str
     description: str
     bmad_root: Path
@@ -60,6 +61,8 @@ class ProjectConfig:
     gitea_admin_token: str
     gmail_base: str
     gmail_domain: str
+    # Champs AVEC valeur par défaut (optionnels) après
+    bmad_artifacts: Optional[Path] = None
     log_level: str = "INFO"
     sync_provisioning: str = "issue"
 # with default warninig!!! !!! !!!
